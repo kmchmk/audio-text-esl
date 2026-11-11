@@ -56,7 +56,8 @@ function writer(pdf: Awaited<ReturnType<typeof doc>>) {
       lines.forEach((ln, i) => {
         if (i === 0 && opts.bold) {
           pdf.setFont("helvetica", "bold").text(prefix, margin, y + size);
-          pdf.setFont("helvetica", "normal").text(ln.slice(prefix.length), margin + pdf.getTextWidth(prefix), y + size);
+          const w = pdf.getTextWidth(prefix); // measured in bold
+          pdf.setFont("helvetica", "normal").text(ln.slice(prefix.length), margin + w, y + size);
         } else pdf.setFont("helvetica", "normal").text(ln, margin, y + size);
         y += size * 1.45;
       });
