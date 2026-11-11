@@ -28,7 +28,9 @@ export const MAX_TEMPLATE_USD = Number(process.env.MAX_TEMPLATE_USD) || 0.05;
 // emotion control (emotion is never sent, so it can't be read aloud by mistake), and speed is
 // applied after synthesis with a pitch-preserving tempo filter.
 function capabilities(model: string): { emotion: EmotionMode; native_speed: boolean } {
-  if (model.startsWith("microsoft/mai-voice")) return { emotion: "azure_style", native_speed: true };
+  // MAI-Voice documents Azure styles, but OpenRouter rejected every style request in testing
+  // (Nov 2026), so it is offered without emotions until that works.
+  if (model.startsWith("microsoft/mai-voice")) return { emotion: "none", native_speed: true };
   if (model.startsWith("openai/")) return { emotion: "instructions", native_speed: true };
   if (/^google\/gemini.*tts/.test(model)) return { emotion: "instructions", native_speed: false };
   if (model.startsWith("fish-audio/")) return { emotion: "instructions", native_speed: false };
