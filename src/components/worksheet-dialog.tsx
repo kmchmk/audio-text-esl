@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { blankable, defaultBlanks, tokenize, worksheetPdf, type PdfLine } from "./pdf";
+import { blankable, defaultBlanks, isMonologue, tokenize, worksheetPdf, type PdfLine } from "./pdf";
 
 /** Pick the words to blank out (click to toggle), then download the worksheet PDF. */
 export function WorksheetDialog({ title, lines, onClose }: { title: string; lines: PdfLine[]; onClose: () => void }) {
@@ -22,7 +22,7 @@ export function WorksheetDialog({ title, lines, onClose }: { title: string; line
         <ol className="my-4 flex-1 space-y-2 overflow-y-auto text-sm">
           {lines.map((l, li) => (
             <li key={li}>
-              <span className="font-medium">{l.character}: </span>
+              {!isMonologue(lines) && <span className="font-medium">{l.character}: </span>}
               {tokenize(l.text).map((w, wi) =>
                 blankable(w) ? (
                   <button

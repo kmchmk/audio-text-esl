@@ -77,14 +77,22 @@ function writer(pdf: Awaited<ReturnType<typeof doc>>) {
 const filename = (title: string, suffix: string) =>
   `${title.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "conversation"}-${suffix}.pdf`;
 
-/** Plain conversation script. */
+/** One speaker means a monologue (talk, story, announcement): no speaker names on each line. */
+export const isMonologue = (lines: PdfLine[]) => new Set(lines.map((l) => l.character)).size <= 1;
+
+/** Speaker label for a line, or none for monologues. */
+const label = (lines: PdfLine[], l: PdfLine) => (isMonologue(lines) ? undefined : l.character);
+
+/** Plain script: a conversation with speaker names, or a monologue as plain paragraphs. */
 export async function conversationPdf(title: string, lines: PdfLine[]) {
   const pdf = await doc();
   const w = writer(pdf);
   w.heading(title);
-  const speakers = [...new Set(lines.map((l) => l.character))];
-  w.para(`Speakers: ${speakers.join(", ")}`, { size: 10, color: 100, gap: 14 });
-  lines.forEach((l) => w.para(l.text, { bold: l.character }));
+  if (!isMonologue(lines)) {
+    const speakers = [...new Set(lines.map((l) => l.character))];
+    w.para(`Speakers: ${speakers.join(", ")}`, { size: 10, color: 100, gap: 14 });
+  }
+  lines.forEach((l) => w.para(l.text, { bold: label(lines, l) }));
   pdf.save(filename(title, "script"));
 }
 
@@ -94,7 +102,7 @@ export async function worksheetPdf(title: string, lines: PdfLine[], blanks: Set<
   const w = writer(pdf);
   w.heading(title);
   w.para("Name: ______________________     Date: ____________", { size: 10, gap: 10 });
-  w.para("Listen to the conversation and write the missing words.", { size: 11, gap: 14 });
+  w.para(`Listen to the ${isMonologue(lines) ? "recording" : "conversation"} and write the missing words.`, { size: 11, gap: 14 });
   const answers: string[] = [];
   lines.forEach((l, li) => {
     const words = tokenize(l.text).map((word, wi) => {
@@ -103,13 +111,13 @@ export async function worksheetPdf(title: string, lines: PdfLine[], blanks: Set<
       answers.push(core);
       return word.replace(core, `(${answers.length}) ________`);
     });
-    w.para(words.join(""), { bold: l.character, gap: 9 });
+    w.para(words.join(""), { bold: label(lines, l), gap: 9 });
   });
   w.newPage();
   w.heading("Answer key", 15);
   answers.forEach((a, i) => w.para(`${i + 1}. ${a}`, { size: 11, gap: 2 }));
   w.space(14);
   w.heading("Full transcript", 13);
-  lines.forEach((l) => w.para(l.text, { bold: l.character, size: 10 }));
+  lines.forEach((l) => w.para(l.text, { bold: label(lines, l), size: 10 }));
   pdf.save(filename(title, "worksheet"));
 }
