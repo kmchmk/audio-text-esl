@@ -62,25 +62,43 @@ export async function openrouterSpeech(opts: {
   speed?: number; // only sent when the model supports native speed
 }): Promise<OrResult> {
   if (!env().openrouterKey) throw new Error("OPENROUTER_API_KEY is not set");
-  const body: Record<string, unknown> = { model: opts.model, voice: opts.voice, input: opts.text };
-  if (opts.speed && Math.abs(opts.speed - 1) > 0.01) body.speed = opts.speed;
-  if (opts.emotion !== "neutral") {
-    if (opts.emotionMode === "azure_style" && AZURE_STYLE[opts.emotion])
-      body.provider = { options: { azure: { style: AZURE_STYLE[opts.emotion], styledegree: 1.2 } } };
-    if (opts.emotionMode === "instructions" && INSTRUCTION[opts.emotion]) body.instructions = INSTRUCTION[opts.emotion];
-    if (opts.emotionMode === "bracket_tag" && TAG[opts.emotion]) body.input = `${TAG[opts.emotion]} ${opts.text}`;
-  }
+  const base: Record<string, unknown> = { model: opts.model, voice: opts.voice, input: opts.text };
+  if (opts.speed && Math.abs(opts.speed - 1) > 0.01) base.speed = opts.speed;
 
-  let res = await speech({ ...body, response_format: "mp3" });
-  let format: "mp3" | "pcm" = "mp3";
-  if (res.status === 400) {
-    const err = await res.text();
-    if (/format|pcm|mp3/i.test(err)) {
-      res = await speech({ ...body, response_format: "pcm" });
-      format = "pcm";
-    } else throw new Error(`OpenRouter 400: ${err.slice(0, 300)}`);
+  // Most expressive request first, then simpler ones. Not every voice supports every
+  // style, and a rejected emotion should never fail the whole conversion.
+  const attempts: Record<string, unknown>[] = [];
+  if (opts.emotion !== "neutral") {
+    const style = AZURE_STYLE[opts.emotion];
+    if (opts.emotionMode === "azure_style" && style) {
+      attempts.push({ ...base, provider: { options: { azure: { style, styledegree: 1.3 } } } });
+      attempts.push({ ...base, provider: { options: { azure: { style } } } });
+    }
+    if (opts.emotionMode === "instructions" && INSTRUCTION[opts.emotion]) attempts.push({ ...base, instructions: INSTRUCTION[opts.emotion] });
+    if (opts.emotionMode === "bracket_tag" && TAG[opts.emotion]) attempts.push({ ...base, input: `${TAG[opts.emotion]} ${opts.text}` });
   }
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  attempts.push(base);
+
+  let res: Response | null = null;
+  let format: "mp3" | "pcm" = "mp3";
+  let lastErr = "";
+  for (const body of attempts) {
+    res = await speech({ ...body, response_format: "mp3" });
+    format = "mp3";
+    if (res.status === 400) {
+      lastErr = await res.text();
+      if (/format|pcm|mp3/i.test(lastErr)) {
+        res = await speech({ ...body, response_format: "pcm" });
+        format = "pcm";
+      }
+    }
+    if (res.ok) break;
+    if (res.status !== 400) break; // auth, rate-limit or server errors: don't try variations
+    if (!lastErr) lastErr = await res.text();
+    console.warn("[openrouter] rejected variant", opts.model, opts.voice, lastErr.slice(0, 200));
+  }
+  if (!res) throw new Error("OpenRouter request was not sent");
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(lastErr || (await res.text())).slice(0, 300)}`);
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("json")) throw new Error(`OpenRouter returned JSON: ${(await res.text()).slice(0, 300)}`);
   if (ct.includes("pcm")) format = "pcm";
