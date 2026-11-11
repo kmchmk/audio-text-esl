@@ -99,7 +99,7 @@ async function load() {
     const dur = (duration.data as Float32Array)[0] / speed;
     const { text_emb } = await enc.run({ text_ids: textIds, style_ttl: st.ttl, text_mask: textMask });
     const T = Math.max(1, Math.ceil((dur * sr) / chunk));
-    let latent = new Float32Array(ldim * T);
+    let latent: Float32Array<ArrayBufferLike> = new Float32Array(ldim * T);
     for (let i = 0; i < latent.length; i++)
       latent[i] = Math.sqrt(-2 * Math.log(Math.max(1e-10, Math.random()))) * Math.cos(2 * Math.PI * Math.random());
     const latentMask = new ort.Tensor("float32", new Float32Array(T).fill(1), [1, 1, T]);
