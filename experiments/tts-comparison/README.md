@@ -12,6 +12,9 @@ peak-normalised. Everything ran on a 4-vCPU cloud container with no GPU.
 | 4 | `samples/4-kittentts2-emotion.mp3` | KittenTTS 2 (1.7B) | Marcus / Maeve / Dante / Kiki | **431 s** for 113 s | 4.9% (**hallucinated a phrase in line 6**) | yes: `[excited]`, `[sad]`, `[angry]`… tags | no, too big (≈1 GB); server/GPU only |
 | 5 | `samples/5-piper.mp3` | Piper 1.8 (VITS) | ryan-high / lessac-high / joe / kristin | 8.0 s for 70 s | 1.6% | none | yes: `piper-tts-web` (WASM) |
 
+| 6 | `samples/6-supertonic3-node-native.mp3` | Supertonic 3, own Node engine (`scripts/supertonic.mjs`) + onnxruntime-node | M1 / F1 / M3 / F3 | 18.5 s for 81 s (load 12 s, RSS 600 MB) | 0.0% | none | backend path |
+| 7 | `samples/7-supertonic3-node-wasm.mp3` | Same engine + onnxruntime-web (WASM, 1 thread, in Node) | M1 / F1 / M3 / F3 | 147 s for 81 s (RSS 1.5 GB) | 0.0% | none | browser path (WebGPU/multi-thread would be faster) |
+
 \* Word error rate when the MP3 is transcribed with Whisper `small.en` and compared with
 the script. This is a rough intelligibility check, not a measure of naturalness.
 
