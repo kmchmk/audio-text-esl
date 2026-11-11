@@ -87,11 +87,11 @@ export function Editor(props: {
 
       <section className="card space-y-4 p-4">
         <div className="flex flex-wrap items-end gap-4">
-          <label className="min-w-60 flex-1 space-y-1">
+          <label className="w-full min-w-0 flex-1 space-y-1 sm:w-auto sm:min-w-60">
             <span className="text-sm font-medium">Title</span>
             <input className="input w-full text-base" value={draft.meta.title} onChange={(e) => draft.updateMeta({ title: e.target.value })} />
           </label>
-          <label className="w-56 space-y-1">
+          <label className="w-full space-y-1 sm:w-56">
             <span className="text-sm font-medium">Pause between lines: {(draft.meta.pause_ms / 1000).toFixed(1)} s</span>
             <input
               type="range"
@@ -117,10 +117,10 @@ export function Editor(props: {
             const m = c && findModel(catalog, c.provider, c.model);
             const noEmotion = m?.emotion === "none";
             return (
-              <li key={l.id} className="flex flex-wrap items-start gap-2 rounded-lg border border-line p-2 sm:flex-nowrap">
-                <span className="w-6 pt-1.5 text-right text-xs text-muted">{i + 1}</span>
+              <li key={l.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line p-2 lg:flex-nowrap lg:items-start">
+                <span className="order-1 w-6 text-right text-xs text-muted lg:pt-2">{i + 1}</span>
                 <select
-                  className="input w-32 shrink-0"
+                  className="input order-2 min-w-0 flex-1 sm:max-w-64 lg:w-32 lg:flex-none"
                   value={l.character_id ?? ""}
                   onChange={(e) => draft.updateLine(l.id, { character_id: e.target.value || null })}
                   aria-label="Speaker"
@@ -139,7 +139,7 @@ export function Editor(props: {
                     else textRefs.current.delete(l.id);
                   }}
                   rows={1}
-                  className="input min-h-[2.1rem] w-full flex-1 resize-none [field-sizing:content]"
+                  className="input order-4 min-h-[2.4rem] basis-full resize-none [field-sizing:content] lg:order-3 lg:min-w-0 lg:basis-auto lg:flex-1"
                   placeholder="Type what this person says…"
                   value={l.text}
                   onChange={(e) => draft.updateLine(l.id, { text: e.target.value })}
@@ -151,7 +151,7 @@ export function Editor(props: {
                   }}
                 />
                 <select
-                  className="input w-28 shrink-0"
+                  className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
                   value={l.emotion}
                   onChange={(e) => draft.updateLine(l.id, { emotion: e.target.value })}
                   aria-label="Emotion"
@@ -165,7 +165,7 @@ export function Editor(props: {
                   ))}
                 </select>
                 <select
-                  className="input w-28 shrink-0"
+                  className="input order-6 min-w-0 flex-1 lg:order-5 lg:w-28 lg:flex-none"
                   value={l.speed ?? ""}
                   onChange={(e) => draft.updateLine(l.id, { speed: e.target.value ? Number(e.target.value) : null })}
                   aria-label="Speed"
@@ -177,14 +177,14 @@ export function Editor(props: {
                     </option>
                   ))}
                 </select>
-                <div className="flex shrink-0 gap-0.5">
-                  <button className="btn btn-ghost px-1.5" title="Move up" onClick={() => draft.moveLine(l.id, -1)} disabled={i === 0}>
+                <div className="order-3 ml-auto flex shrink-0 gap-0.5 lg:order-6 lg:ml-0">
+                  <button className="btn btn-ghost icon-btn" title="Move up" onClick={() => draft.moveLine(l.id, -1)} disabled={i === 0}>
                     ↑
                   </button>
-                  <button className="btn btn-ghost px-1.5" title="Move down" onClick={() => draft.moveLine(l.id, 1)} disabled={i === draft.lines.length - 1}>
+                  <button className="btn btn-ghost icon-btn" title="Move down" onClick={() => draft.moveLine(l.id, 1)} disabled={i === draft.lines.length - 1}>
                     ↓
                   </button>
-                  <button className="btn btn-ghost px-1.5 text-muted" title="Delete line" onClick={() => draft.updateLine(l.id, { deleted: true })}>
+                  <button className="btn btn-ghost icon-btn text-muted" title="Delete line" onClick={() => draft.updateLine(l.id, { deleted: true })}>
                     ✕
                   </button>
                 </div>
@@ -198,7 +198,7 @@ export function Editor(props: {
         <p className="text-xs text-muted">Tip: press Enter to add the next line. Shift+Enter makes a line break.</p>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
-          <button className="btn btn-primary" onClick={convert} disabled={converting || draft.lines.length === 0} data-tour="convert">
+          <button className="btn btn-primary w-full sm:w-auto" onClick={convert} disabled={converting || draft.lines.length === 0} data-tour="convert">
             {converting ? "Starting…" : "Convert to audio conversation"}
           </button>
           {catalog && (

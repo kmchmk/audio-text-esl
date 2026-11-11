@@ -15,10 +15,10 @@ export function WorksheetDialog({ title, lines, onClose }: { title: string; line
       return n;
     });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal>
-      <div className="card flex max-h-[85vh] w-full max-w-2xl flex-col p-5 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center sm:px-4" role="dialog" aria-modal>
+      <div className="card flex max-h-[90dvh] w-full max-w-2xl flex-col p-4 shadow-xl sm:p-5">
         <h2 className="text-lg font-semibold">Gap-fill worksheet</h2>
-        <p className="text-sm text-muted">Click words to add or remove gaps. {blanks.size} gaps selected.</p>
+        <p className="text-sm text-muted">Tap words to add or remove gaps. {blanks.size} gaps selected.</p>
         <ol className="my-4 flex-1 space-y-2 overflow-y-auto text-sm">
           {lines.map((l, li) => (
             <li key={li}>
@@ -28,7 +28,7 @@ export function WorksheetDialog({ title, lines, onClose }: { title: string; line
                   <button
                     key={wi}
                     onClick={() => toggle(`${li}:${wi}`)}
-                    className={`rounded px-0.5 ${blanks.has(`${li}:${wi}`) ? "bg-accent text-white" : "hover:bg-accent-soft"}`}
+                    className={`rounded px-0.5 py-0.5 ${blanks.has(`${li}:${wi}`) ? "bg-accent text-white" : "hover:bg-accent-soft"}`}
                   >
                     {w}
                   </button>
@@ -39,7 +39,7 @@ export function WorksheetDialog({ title, lines, onClose }: { title: string; line
             </li>
           ))}
         </ol>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button className="btn" onClick={() => setBlanks(new Set())}>
             Clear gaps
           </button>

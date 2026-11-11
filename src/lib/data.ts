@@ -37,7 +37,12 @@ const txid = sql<string>`pg_current_xact_id()::text`;
 
 // ---------------------------------------------------------------- seeding
 
-/** First visit: create settings, the four template characters and the template conversation. */
+/**
+ * First visit: create settings, the four template characters and the template conversation.
+ * The settings row is the claim. A concurrent request that loses the claim while seeding is
+ * still in progress (seconds after sign-up) waits for the starter conversation to appear, so
+ * the first page never shows an empty account.
+ */
 export async function ensureSeeded(userId: string) {
   const db = getDb();
   const [row] = await db
@@ -45,7 +50,16 @@ export async function ensureSeeded(userId: string) {
     .values({ user_id: userId, seeded_at: new Date() })
     .onConflictDoNothing()
     .returning({ user_id: s.user_settings.user_id });
-  if (!row) return; // already seeded
+  if (!row) {
+    const settings = await getSettings(userId);
+    const fresh = settings?.seeded_at && Date.now() - settings.seeded_at.getTime() < 30_000;
+    for (let i = 0; fresh && i < 20; i++) {
+      const [c] = await db.select({ id: s.conversations.id }).from(s.conversations).where(eq(s.conversations.user_id, userId)).limit(1);
+      if (c) break;
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return;
+  }
   const ids: Record<string, string> = {};
   for (const c of TEMPLATE_CHARACTERS) {
     ids[c.key] = await createCharacter(userId, {

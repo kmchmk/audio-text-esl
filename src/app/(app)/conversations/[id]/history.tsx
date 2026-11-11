@@ -176,7 +176,7 @@ function Entry({
           <p className="text-xs text-muted">
             Voices used: {e.characters.map((c) => `${c.name} (v${c.version}, ${c.voice})`).join(" · ")} · pause {e.pause_ms / 1000}s
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {e.download_url && (
               <a className="btn btn-primary" href={e.download_url}>
                 Download MP3
@@ -249,13 +249,18 @@ function ShareControls({ e, reload }: { e: HistoryEntry; reload: () => Promise<v
   const [busy, setBusy] = useState(false);
   const url = (t: string) => `${window.location.origin}/s/${t}`;
   return (
-    <span className="relative">
+    <span className="relative grid sm:block">
       <button className="btn" onClick={() => setOpen(!open)}>
         Share{e.shares.length ? ` (${e.shares.length})` : ""}
       </button>
       {open && (
-        <div className="card absolute left-0 z-20 mt-1 w-80 space-y-3 p-3 text-sm shadow-lg">
-          <p className="text-muted">Anyone with the link can listen to version {e.version} without signing in.</p>
+        <div className="card fixed inset-x-3 bottom-3 z-40 max-h-[70vh] space-y-3 overflow-y-auto p-4 text-sm shadow-2xl lg:absolute lg:inset-x-auto lg:bottom-auto lg:left-0 lg:mt-1 lg:w-80 lg:p-3 lg:shadow-lg">
+          <div className="flex items-start gap-2">
+            <p className="flex-1 text-muted">Anyone with the link can listen to version {e.version} without signing in.</p>
+            <button className="btn btn-ghost icon-btn -mt-1" aria-label="Close" onClick={() => setOpen(false)}>
+              ✕
+            </button>
+          </div>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={hide} onChange={(x) => setHide(x.target.checked)} />
             Hide the transcript (for listening tests)
@@ -280,7 +285,7 @@ function ShareControls({ e, reload }: { e: HistoryEntry; reload: () => Promise<v
                   <input readOnly className="input min-w-0 flex-1 text-xs" value={url(s.token)} onFocus={(x) => x.target.select()} />
                   <span className="chip">{s.hide_transcript ? "no text" : "with text"}</span>
                   <button
-                    className="btn btn-ghost px-1.5 text-danger"
+                    className="btn btn-ghost icon-btn text-danger"
                     title="Revoke link"
                     onClick={async () => {
                       if (!confirm("Revoke this link? It will stop working immediately.")) return;

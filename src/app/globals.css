@@ -28,6 +28,10 @@
   }
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 html,
 body {
   background: var(--color-bg);
@@ -38,11 +42,16 @@ body {
   .card {
     @apply rounded-xl border border-line bg-surface;
   }
+  /* 16px text on touch screens stops iOS Safari zooming into fields on focus. */
   .input {
-    @apply rounded-md border border-line bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-accent;
+    @apply rounded-md border border-line bg-surface px-2.5 py-2 text-base outline-none focus:border-accent lg:py-1.5 lg:text-sm;
   }
+  /* Touch-sized below lg (phones and iPads), compact on desktop. */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium hover:bg-bg disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium hover:bg-bg disabled:cursor-not-allowed disabled:opacity-50 lg:min-h-0;
+  }
+  .icon-btn {
+    @apply min-w-10 px-0 lg:min-w-0 lg:px-1.5;
   }
   .btn-primary {
     @apply border-accent bg-accent text-white hover:bg-accent hover:opacity-90;

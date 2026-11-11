@@ -13,22 +13,24 @@ export default async function Home() {
   const convs = await listConversations(user.id);
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto text-xl font-semibold">Conversations</h1>
-        <form action={newConversation.bind(null, true)}>
-          <button className="btn">New from template</button>
-        </form>
-        <form action={newConversation.bind(null, false)}>
-          <button className="btn btn-primary">New conversation</button>
-        </form>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <h1 className="text-xl font-semibold sm:mr-auto">Conversations</h1>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <form action={newConversation.bind(null, true)}>
+            <button className="btn w-full">New from template</button>
+          </form>
+          <form action={newConversation.bind(null, false)}>
+            <button className="btn btn-primary w-full">New conversation</button>
+          </form>
+        </div>
       </div>
       {convs.length === 0 ? (
         <p className="card p-6 text-sm text-muted">No conversations yet. Start from the template to see how it works.</p>
       ) : (
         <ul className="card divide-y divide-line">
           {convs.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 px-4 py-3">
-              <Link href={`/conversations/${c.id}`} className="min-w-0 flex-1">
+            <li key={c.id} className="flex items-center gap-3 px-4 py-2">
+              <Link href={`/conversations/${c.id}`} className="min-w-0 flex-1 py-1">
                 <p className="truncate font-medium">{c.title}</p>
                 <p className="text-xs text-muted">
                   {c.lines} lines · {c.versions === 0 ? "not converted yet" : `${c.versions} version${c.versions > 1 ? "s" : ""}`}
