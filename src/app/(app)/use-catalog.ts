@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type VoiceOption = { id: string; label: string; gender: string; accent: string };
+export type VoiceOption = { id: string; label: string; gender: string; accent: string; age?: string };
 export type ModelOption = {
   provider: "supertonic" | "openrouter";
   model: string;

@@ -228,10 +228,11 @@ function CharacterForm({
   );
 }
 
-function describe(v: { gender: string; accent: string }): Partial<Draft> {
+function describe(v: { gender: string; accent: string; age?: string }): Partial<Draft> {
   const out: Partial<Draft> = {};
   if (v.gender === "male" || v.gender === "female") out.gender = v.gender;
   if (v.accent && v.accent !== "Not specified") out.accent = v.accent;
+  if (v.age) out.age_group = v.age;
   return out;
 }
 

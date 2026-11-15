@@ -6,7 +6,7 @@ import { SUPERTONIC_VOICES } from "./supertonic";
 /** How a model receives the line's emotion. */
 export type EmotionMode = "none" | "azure_style" | "instructions" | "bracket_tag";
 
-export type VoiceOption = { id: string; label: string; gender: string; accent: string };
+export type VoiceOption = { id: string; label: string; gender: string; accent: string; age?: string };
 
 export type ModelOption = {
   provider: "supertonic" | "openrouter";
@@ -23,6 +23,29 @@ export type ModelOption = {
 
 /** Only models estimated under this for the template conversation are offered. */
 export const MAX_TEMPLATE_USD = Number(process.env.MAX_TEMPLATE_USD) || 0.05;
+
+/**
+ * Exceptions to the price cap: no cheaper model has real child voices (Nov 2026 listening
+ * tests), so MiniMax is offered with only its child and teen voices.
+ */
+const CHILD_VOICES: Record<string, { name: string; voices: VoiceOption[] }> = {
+  "minimax/speech-2.8-turbo": {
+    name: "MiniMax Speech 2.8 Turbo (child voices)",
+    voices: [
+      ["English_radiant_girl", "Radiant girl", "female", "child"],
+      ["English_PlayfulGirl", "Playful girl", "female", "child"],
+      ["English_LovelyGirl", "Lovely girl", "female", "child"],
+      ["English_WhimsicalGirl", "Whimsical girl", "female", "child"],
+      ["English_Kind-heartedGirl", "Kind-hearted girl", "female", "child"],
+      ["English_Soft-spokenGirl", "Soft-spoken girl", "female", "child"],
+      ["English_UpsetGirl", "Upset girl", "female", "child"],
+      ["English_Whispering_girl", "Whispering girl", "female", "child"],
+      ["English_Strong-WilledBoy", "Strong-willed boy", "male", "child"],
+      ["English_SadTeen", "Sad teen", "unknown", "teen"],
+      ["English_AnimeCharacter", "Anime character", "unknown", "teen"],
+    ].map(([id, label, gender, age]) => ({ id, label, gender, age, accent: "Not specified" })),
+  },
+};
 
 // Capabilities documented by OpenRouter for speech models. Anything not listed gets no
 // emotion control (emotion is never sent, so it can't be read aloud by mistake), and speed is
@@ -103,15 +126,17 @@ async function openrouterModels(): Promise<ModelOption[]> {
   const models: ModelOption[] = [];
   for (const m of data) {
     const { usd, note } = estimate(m);
-    if (usd >= MAX_TEMPLATE_USD) continue;
-    const voices = (m.supported_voices ?? [])
-      .map((v) => describeVoice(m.id, v))
-      .filter((v): v is VoiceOption => !!v);
+    const kids = CHILD_VOICES[m.id];
+    if (usd >= MAX_TEMPLATE_USD && !kids) continue;
+    const offered = new Set(m.supported_voices ?? []);
+    const voices = kids
+      ? kids.voices.filter((v) => offered.has(v.id))
+      : (m.supported_voices ?? []).map((v) => describeVoice(m.id, v)).filter((v): v is VoiceOption => !!v);
     if (!voices.length) continue; // no selectable voices
     models.push({
       provider: "openrouter",
       model: m.id,
-      name: m.name,
+      name: kids?.name ?? m.name,
       est_template_usd: usd,
       price_note: note,
       free: usd === 0,
