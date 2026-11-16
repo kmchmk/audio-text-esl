@@ -64,8 +64,9 @@ export function CharacterList({ initial }: { initial: CharacterView[] }) {
                   {findModel(catalog, c.provider, c.model)?.name ?? c.model} · {c.voice}
                 </p>
                 {catalog && agedYoung(c.age_group) && !voiceIsYoung(catalog, c) && (
-                  <p className="mt-1 text-xs text-danger">
-                    Labelled {AGES.find((a) => a[0] === c.age_group)?.[1]}, but this is an adult voice. Edit to pick a child voice.
+                  <p className="mt-1 text-xs text-muted">
+                    ⓘ Labelled {AGES.find((a) => a[0] === c.age_group)?.[1]}, but this free voice sounds adult. For a real child voice, edit
+                    and pick one under &quot;Child voices&quot; (small cost).
                   </p>
                 )}
               </div>

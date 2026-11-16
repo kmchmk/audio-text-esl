@@ -155,7 +155,7 @@ export function Editor(props: {
                 {noEmotion ? (
                   // The voice can't act out emotions; the stored emotion is kept for when the voice changes.
                   <select
-                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
+                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-32 lg:flex-none"
                     disabled
                     aria-label="Emotion (not available for this voice)"
                     title={`${c?.name}'s voice can't act out emotions. See the note above the lines.`}
@@ -164,7 +164,7 @@ export function Editor(props: {
                   </select>
                 ) : (
                   <select
-                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
+                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-32 lg:flex-none"
                     value={l.emotion}
                     onChange={(e) => draft.updateLine(l.id, { emotion: e.target.value })}
                     aria-label="Emotion"
