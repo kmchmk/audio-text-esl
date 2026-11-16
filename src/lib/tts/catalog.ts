@@ -26,7 +26,7 @@ export const MAX_TEMPLATE_USD = Number(process.env.MAX_TEMPLATE_USD) || 0.05;
 
 /**
  * Exceptions to the price cap: no cheaper model has real child voices (Nov 2026 listening
- * tests), so MiniMax is offered with only its child and teen voices.
+ * tests), so MiniMax is offered with only the child and teen voices approved by ear.
  */
 const CHILD_VOICES: Record<string, { name: string; voices: VoiceOption[] }> = {
   "minimax/speech-2.8-turbo": {
@@ -38,8 +38,6 @@ const CHILD_VOICES: Record<string, { name: string; voices: VoiceOption[] }> = {
       ["English_WhimsicalGirl", "Whimsical girl", "female", "child"],
       ["English_Kind-heartedGirl", "Kind-hearted girl", "female", "child"],
       ["English_Soft-spokenGirl", "Soft-spoken girl", "female", "child"],
-      ["English_UpsetGirl", "Upset girl", "female", "child"],
-      ["English_Whispering_girl", "Whispering girl", "female", "child"],
       ["English_Strong-WilledBoy", "Strong-willed boy", "male", "child"],
       ["English_SadTeen", "Sad teen", "unknown", "teen"],
       ["English_AnimeCharacter", "Anime character", "unknown", "teen"],
