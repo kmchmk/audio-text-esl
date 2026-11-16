@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const DONE_KEY = "esl-tutorial-done";
 
 import { setTutorialDone } from "./actions";
 
@@ -35,9 +37,18 @@ const STEPS = [
 export function Tutorial({ initiallyOpen }: { initiallyOpen: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
   const [step, setStep] = useState(0);
+  // The server flag can lag behind a quick navigation, so remember "done" in this browser too.
+  useEffect(() => {
+    try {
+      if (initiallyOpen && localStorage.getItem(DONE_KEY)) setOpen(false);
+    } catch {}
+  }, [initiallyOpen]);
   const close = () => {
     setOpen(false);
     setStep(0);
+    try {
+      localStorage.setItem(DONE_KEY, "1");
+    } catch {}
     setTutorialDone(true).catch(() => {});
   };
   return (
