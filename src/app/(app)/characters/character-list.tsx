@@ -63,6 +63,11 @@ export function CharacterList({ initial }: { initial: CharacterView[] }) {
                 <p className="truncate text-xs text-muted">
                   {findModel(catalog, c.provider, c.model)?.name ?? c.model} · {c.voice}
                 </p>
+                {catalog && agedYoung(c.age_group) && !voiceIsYoung(catalog, c) && (
+                  <p className="mt-1 text-xs text-danger">
+                    Labelled {AGES.find((a) => a[0] === c.age_group)?.[1]}, but this is an adult voice. Edit to pick a child voice.
+                  </p>
+                )}
               </div>
               <button className="btn" onClick={() => setEditing(c.id)}>
                 Edit
@@ -131,15 +136,23 @@ function CharacterForm({
             {!catalog && <option>Loading voices…</option>}
             {catalog && (
               <>
-                <optgroup label="Free">
+                <optgroup label="Free (adult voices)">
                   {catalog.models.filter((m) => m.free).map((m) => (
                     <option key={m.model} value={`${m.provider}|${m.model}`}>
                       {m.name}
                     </option>
                   ))}
                 </optgroup>
-                <optgroup label="Paid (cost of a 16-line conversation)">
-                  {catalog.models.filter((m) => !m.free).map((m) => (
+                <optgroup label="Child voices (cost of a 16-line conversation)">
+                  {catalog.models.filter((m) => m.child_voices).map((m) => (
+                    <option key={m.model} value={`${m.provider}|${m.model}`}>
+                      {m.name} · ~{formatThb(m.est_template_usd, catalog.rate)}
+                      {m.emotion !== "none" ? " · emotions" : ""}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Paid adult voices (cost of a 16-line conversation)">
+                  {catalog.models.filter((m) => !m.free && !m.child_voices).map((m) => (
                     <option key={m.model} value={`${m.provider}|${m.model}`}>
                       {m.name} · ~{formatThb(m.est_template_usd, catalog.rate)}
                       {m.emotion !== "none" ? " · emotions" : ""}
@@ -192,10 +205,24 @@ function CharacterForm({
         </Field>
       </div>
       {model && (
-        <p className="text-xs text-muted">
-          {model.price_note}. {model.emotion === "none" ? "This voice ignores emotions (speed still works)." : "This voice can show emotions."}{" "}
-          Gender, age and accent are labels for you; the voice decides how it actually sounds.
-        </p>
+        <div className="rounded-md bg-bg p-3 text-sm">
+          <p className="font-medium">About {model.name}</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
+            <li>
+              {model.free ? "Free." : `Paid: ${model.price_note}, about ${formatThb(model.est_template_usd, catalog?.rate ?? 0)} for a 16-line conversation, from the shared budget.`}
+            </li>
+            {model.notes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+            <li>Gender, age and accent are labels for you; the voice decides how it actually sounds.</li>
+          </ul>
+          {agedYoung(d.age_group) && catalog && !voiceIsYoung(catalog, d) && (
+            <p className="mt-2 text-danger">
+              You set the age to {AGES.find((a) => a[0] === d.age_group)?.[1]}, but this voice is an adult. For a child, choose a service under
+              &quot;Child voices&quot;.
+            </p>
+          )}
+        </div>
       )}
       {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex gap-2">
@@ -226,6 +253,14 @@ function CharacterForm({
       </div>
     </div>
   );
+}
+
+const agedYoung = (age: string) => age === "child" || age === "teen";
+
+/** True when the selected voice really sounds like a child or teen. */
+function voiceIsYoung(catalog: Catalog, c: { provider: string; model: string; voice: string }) {
+  const age = findModel(catalog, c.provider, c.model)?.voices.find((v) => v.id === c.voice)?.age;
+  return age === "child" || age === "teen";
 }
 
 function describe(v: { gender: string; accent: string; age?: string }): Partial<Draft> {

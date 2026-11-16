@@ -4,7 +4,7 @@ import { TEMPLATE_STATS } from "../template";
 import { SUPERTONIC_VOICES } from "./supertonic";
 
 /** How a model receives the line's emotion. */
-export type EmotionMode = "none" | "azure_style" | "instructions" | "bracket_tag";
+export type EmotionMode = "none" | "azure_style" | "instructions" | "bracket_tag" | "fish_prompt";
 
 export type VoiceOption = { id: string; label: string; gender: string; accent: string; age?: string };
 
@@ -18,6 +18,10 @@ export type ModelOption = {
   emotion: EmotionMode;
   native_speed: boolean;
   free: boolean;
+  /** Has voices that sound like real children (approved in listening tests). */
+  child_voices: boolean;
+  /** Plain-language facts teachers should know when picking this service. */
+  notes: string[];
   voices: VoiceOption[];
 };
 
@@ -45,6 +49,41 @@ const CHILD_VOICES: Record<string, { name: string; voices: VoiceOption[] }> = {
   },
 };
 
+/**
+ * Fish Audio Drama 3 has no voice list: the voice is described in words. "preset:" voices are
+ * descriptions we tested; only a girl sounded like a real child (a boy could not be produced).
+ */
+export const FISH_MODEL = "fish-audio/drama-3";
+export const FISH_PRESETS: Record<string, string> = {
+  "preset:girl-child": "a cheerful eight-year-old girl, small high child's voice",
+};
+const FISH_VOICES: VoiceOption[] = [
+  { id: "preset:girl-child", label: "Girl, about 8 years old", gender: "female", age: "child", accent: "Not specified" },
+];
+
+/** What teachers should know about each service, shown in the character editor. */
+function notesFor(model: string): string[] {
+  if (model === FISH_MODEL)
+    return [
+      "Real child voice: a girl of about 8. There is no boy voice; we tried and it always came out as a girl. For a boy, use MiniMax's \"Strong-willed boy\".",
+      "The voice is described in words for each line, so it can vary slightly from line to line.",
+      "Emotions work.",
+    ];
+  if (model.startsWith("minimax/"))
+    return [
+      "Real child and teen voices (the only service with a boy).",
+      "Costs more than the other paid voices, so only use it for child characters.",
+      "Emotions are not available: the emotion you pick is ignored for these voices. Speed still works.",
+    ];
+  if (model.startsWith("microsoft/mai-voice"))
+    return ["Adult voices only.", "Emotions are not available: the service rejects emotion settings, so they are ignored."];
+  if (/^google\/gemini.*tts/.test(model)) return ["Adult voices only.", "Emotions work."];
+  if (/^elevenlabs\/eleven-(v3|v4)/.test(model)) return ["Adult voices only.", "Emotions work."];
+  if (model.endsWith(":free")) return ["Adult voices only.", "Free but rate limited: it can fail when many people use it.", "Emotions are not available."];
+  if (model.startsWith("hexgrad/kokoro")) return ["Adult voices only.", "Very cheap, but can take 30+ seconds per line.", "Emotions are not available."];
+  return ["Adult voices only.", "Emotions are not available: the emotion you pick is ignored."];
+}
+
 // Capabilities documented by OpenRouter for speech models. Anything not listed gets no
 // emotion control (emotion is never sent, so it can't be read aloud by mistake), and speed is
 // applied after synthesis with a pitch-preserving tempo filter.
@@ -54,6 +93,7 @@ function capabilities(model: string): { emotion: EmotionMode; native_speed: bool
   if (model.startsWith("microsoft/mai-voice")) return { emotion: "none", native_speed: true };
   if (model.startsWith("openai/")) return { emotion: "instructions", native_speed: true };
   if (/^google\/gemini.*tts/.test(model)) return { emotion: "instructions", native_speed: false };
+  if (model === FISH_MODEL) return { emotion: "fish_prompt", native_speed: false };
   if (model.startsWith("fish-audio/")) return { emotion: "instructions", native_speed: false };
   if (/^elevenlabs\/eleven-(v3|v4)/.test(model)) return { emotion: "bracket_tag", native_speed: false };
   return { emotion: "none", native_speed: false };
@@ -125,19 +165,24 @@ async function openrouterModels(): Promise<ModelOption[]> {
   for (const m of data) {
     const { usd, note } = estimate(m);
     const kids = CHILD_VOICES[m.id];
+    const fish = m.id === FISH_MODEL;
     if (usd >= MAX_TEMPLATE_USD && !kids) continue;
     const offered = new Set(m.supported_voices ?? []);
-    const voices = kids
-      ? kids.voices.filter((v) => offered.has(v.id))
-      : (m.supported_voices ?? []).map((v) => describeVoice(m.id, v)).filter((v): v is VoiceOption => !!v);
+    const voices = fish
+      ? FISH_VOICES
+      : kids
+        ? kids.voices.filter((v) => offered.has(v.id))
+        : (m.supported_voices ?? []).map((v) => describeVoice(m.id, v)).filter((v): v is VoiceOption => !!v);
     if (!voices.length) continue; // no selectable voices
     models.push({
       provider: "openrouter",
       model: m.id,
-      name: kids?.name ?? m.name,
+      name: fish ? "Fish Audio Drama 3 (child girl voice)" : (kids?.name ?? m.name),
       est_template_usd: usd,
       price_note: note,
       free: usd === 0,
+      child_voices: fish || !!kids,
+      notes: notesFor(m.id),
       voices,
       ...capabilities(m.id),
     });
@@ -156,6 +201,13 @@ export const SUPERTONIC_MODEL: ModelOption = {
   emotion: "none",
   native_speed: true,
   free: true,
+  child_voices: false,
+  notes: [
+    "Free: runs on our own server, so it never uses the shared budget.",
+    "Adult voices only. Free voices that sound like children don't exist yet; for children use MiniMax or Fish Audio (small cost).",
+    "Emotions are not available: the emotion you pick is ignored. Speed works.",
+    "The first conversion after a quiet period can take about 30 seconds while the voice engine starts.",
+  ],
   voices: SUPERTONIC_VOICES.map((v) => ({
     id: v.id,
     label: `${v.gender === "male" ? "Male" : "Female"} ${v.id.slice(1)}`,

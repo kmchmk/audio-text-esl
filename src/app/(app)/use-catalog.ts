@@ -9,9 +9,11 @@ export type ModelOption = {
   name: string;
   est_template_usd: number;
   price_note: string;
-  emotion: "none" | "azure_style" | "instructions" | "bracket_tag";
+  emotion: "none" | "azure_style" | "instructions" | "bracket_tag" | "fish_prompt";
   native_speed: boolean;
   free: boolean;
+  child_voices: boolean;
+  notes: string[];
   voices: VoiceOption[];
 };
 export type Catalog = { models: ModelOption[]; rate: number; maxTemplateUsd: number };

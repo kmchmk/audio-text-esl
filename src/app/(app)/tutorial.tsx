@@ -14,6 +14,10 @@ const STEPS = [
     body: "Characters are your speakers. Each one has a voice, accent, gender, age and default speed. You already have Dad, Mom, Son and Daughter. Free voices cost nothing; paid voices show their price in baht.",
   },
   {
+    title: "About voices",
+    body: "Free voices are adults only, which is why the sample family sounds grown-up: it keeps the demo free. For real children, choose a child voice in Characters: MiniMax has girls and one boy, and Fish Audio has a girl only (no boy voice is available). Child voices cost a little per conversion. Emotions work only with voices marked \"emotions\"; with other voices, the emotion is ignored and the app tells you so.",
+  },
+  {
     title: "2. Write the conversation",
     body: "Type one line per row. For each line pick the speaker, an emotion and a speed. Everything saves automatically, even offline, and appears on your other devices.",
   },

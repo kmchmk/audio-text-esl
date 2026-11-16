@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Emotion } from "../emotions";
 import { env } from "../env";
-import type { EmotionMode } from "./catalog";
+import { FISH_PRESETS, type EmotionMode } from "./catalog";
 
 const API = "https://openrouter.ai/api/v1";
 
@@ -42,6 +42,18 @@ const TAG: Partial<Record<Emotion, string>> = {
   worried: "[nervously]",
 };
 
+const FISH_MOOD: Partial<Record<Emotion, string>> = {
+  friendly: "friendly and warm",
+  cheerful: "cheerful",
+  excited: "excited",
+  sad: "sad",
+  angry: "angry",
+  serious: "serious",
+  whispering: "whispering",
+  surprised: "surprised",
+  worried: "worried",
+};
+
 export type OrResult = { audio: Buffer; format: "mp3" | "pcm"; pcmRate: number; generationId: string | null };
 
 async function speech(body: Record<string, unknown>) {
@@ -62,7 +74,11 @@ export async function openrouterSpeech(opts: {
   speed?: number; // only sent when the model supports native speed
 }): Promise<OrResult> {
   if (!env().openrouterKey) throw new Error("OPENROUTER_API_KEY is not set");
-  const base: Record<string, unknown> = { model: opts.model, voice: opts.voice, input: opts.text };
+  const preset = FISH_PRESETS[opts.voice];
+  if (opts.voice.startsWith("preset:") && !preset) throw new Error(`Unknown voice ${opts.voice}`);
+  const base: Record<string, unknown> = preset
+    ? { model: opts.model, input: `[${preset}] ${opts.text}` } // the voice is described, not named
+    : { model: opts.model, voice: opts.voice, input: opts.text };
   if (opts.speed && Math.abs(opts.speed - 1) > 0.01) base.speed = opts.speed;
 
   // Most expressive request first, then simpler ones. Not every voice supports every
@@ -76,6 +92,10 @@ export async function openrouterSpeech(opts: {
     }
     if (opts.emotionMode === "instructions" && INSTRUCTION[opts.emotion]) attempts.push({ ...base, instructions: INSTRUCTION[opts.emotion] });
     if (opts.emotionMode === "bracket_tag" && TAG[opts.emotion]) attempts.push({ ...base, input: `${TAG[opts.emotion]} ${opts.text}` });
+    if (opts.emotionMode === "fish_prompt") {
+      const desc = preset ? `${preset}, ` : "";
+      attempts.push({ ...base, input: `[${desc}${FISH_MOOD[opts.emotion] ?? opts.emotion}] ${opts.text}` });
+    }
   }
   attempts.push(base);
 

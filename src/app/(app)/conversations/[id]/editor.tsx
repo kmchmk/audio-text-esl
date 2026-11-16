@@ -9,7 +9,7 @@ import { EMOTIONS } from "@/lib/emotions";
 import type { LiveGeneration } from "@/lib/live";
 import { formatThb } from "@/lib/money";
 
-import { findModel, useCatalog } from "../../use-catalog";
+import { findModel, useCatalog, type Catalog } from "../../use-catalog";
 import { History } from "./history";
 import { useDraft, type SyncStatus } from "./use-draft";
 
@@ -111,6 +111,8 @@ export function Editor(props: {
           </p>
         )}
 
+        <VoiceNotes characters={characters.filter((c) => draft.lines.some((l) => l.character_id === c.id))} catalog={catalog} />
+
         <ol className="space-y-2" data-tour="lines">
           {draft.lines.map((l, i) => {
             const c = l.character_id ? charById.get(l.character_id) : undefined;
@@ -150,20 +152,30 @@ export function Editor(props: {
                     }
                   }}
                 />
-                <select
-                  className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
-                  value={l.emotion}
-                  onChange={(e) => draft.updateLine(l.id, { emotion: e.target.value })}
-                  aria-label="Emotion"
-                  title={noEmotion ? `${c?.name}'s voice can't show emotions. Pick a voice marked "emotions" to use this.` : "Emotion"}
-                  style={noEmotion ? { opacity: 0.55 } : undefined}
-                >
-                  {EMOTIONS.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.label}
-                    </option>
-                  ))}
-                </select>
+                {noEmotion ? (
+                  // The voice can't act out emotions; the stored emotion is kept for when the voice changes.
+                  <select
+                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
+                    disabled
+                    aria-label="Emotion (not available for this voice)"
+                    title={`${c?.name}'s voice can't act out emotions. See the note above the lines.`}
+                  >
+                    <option>No emotions</option>
+                  </select>
+                ) : (
+                  <select
+                    className="input order-5 min-w-0 flex-1 lg:order-4 lg:w-28 lg:flex-none"
+                    value={l.emotion}
+                    onChange={(e) => draft.updateLine(l.id, { emotion: e.target.value })}
+                    aria-label="Emotion"
+                  >
+                    {EMOTIONS.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <select
                   className="input order-6 min-w-0 flex-1 lg:order-5 lg:w-28 lg:flex-none"
                   value={l.speed ?? ""}
@@ -219,6 +231,44 @@ export function Editor(props: {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
       />
+    </div>
+  );
+}
+
+/** Explains, in plain words, why some lines can't have emotions and why "teen" characters may sound adult. */
+function VoiceNotes({ characters, catalog }: { characters: CharacterView[]; catalog: Catalog | null }) {
+  if (!catalog) return null;
+  const voiceOf = (c: CharacterView) => findModel(catalog, c.provider, c.model);
+  const noEmotion = characters.filter((c) => voiceOf(c)?.emotion === "none");
+  const adultKids = characters.filter((c) => {
+    if (c.age_group !== "child" && c.age_group !== "teen") return false;
+    const age = voiceOf(c)?.voices.find((v) => v.id === c.voice)?.age;
+    return age !== "child" && age !== "teen";
+  });
+  if (!noEmotion.length && !adultKids.length) return null;
+  const names = (cs: CharacterView[]) => cs.map((c) => c.name).join(", ");
+  return (
+    <div className="space-y-1.5 rounded-md bg-accent-soft p-3 text-sm">
+      {noEmotion.length > 0 && (
+        <p>
+          <span className="font-medium">No emotions for {names(noEmotion)}:</span> their voices can&apos;t act out emotions, so those lines are
+          read in a neutral tone. To use emotions, give the character a voice marked &quot;emotions&quot; in{" "}
+          <Link className="underline" href="/characters">
+            Characters
+          </Link>
+          . Emotions you set earlier are kept and come back if you change the voice.
+        </p>
+      )}
+      {adultKids.length > 0 && (
+        <p>
+          <span className="font-medium">{names(adultKids)} sound like adults:</span> they use free voices, and free voices are adults only (that
+          keeps the demo free). For real child voices, change their voice in{" "}
+          <Link className="underline" href="/characters">
+            Characters
+          </Link>{" "}
+          to MiniMax (girls and a boy) or Fish Audio (a girl only). These cost a little per conversion.
+        </p>
+      )}
     </div>
   );
 }
