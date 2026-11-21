@@ -29,6 +29,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/characters" className="text-muted hover:text-fg" data-tour="characters">
               Characters
             </Link>
+            <Link href="/agents" className="text-muted hover:text-fg">
+              AI agents
+            </Link>
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <BudgetPill />

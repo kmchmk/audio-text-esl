@@ -1,6 +1,6 @@
 // Renders the script and worksheet PDFs for a monologue and a conversation into <out-dir>.
 // jsPDF's save() writes to the current directory when run under Node.
-import { conversationPdf, defaultBlanks, worksheetPdf } from "../src/components/pdf.ts";
+import { buildScriptPdf, buildWorksheetPdf, defaultBlanks, pdfFilename } from "../src/lib/pdf/core.ts";
 
 process.chdir(process.argv[2]);
 const mono = [
@@ -12,7 +12,7 @@ const conv = [
   { character: "Mom", text: "Dinner's ready, everyone! Come and sit down before it gets cold." },
   { character: "Son", text: "Coming! Wow, it smells amazing. Is that lasagna?" },
 ];
-await conversationPdf("Museum tour", mono);
-await worksheetPdf("Museum tour", mono, defaultBlanks(mono));
-await conversationPdf("Family dinner", conv);
+(await buildScriptPdf("Museum tour", mono)).save(pdfFilename("Museum tour", "script"));
+(await buildWorksheetPdf("Museum tour", mono, defaultBlanks(mono))).save(pdfFilename("Museum tour", "worksheet"));
+(await buildScriptPdf("Family dinner", conv)).save(pdfFilename("Family dinner", "script"));
 console.log("done");

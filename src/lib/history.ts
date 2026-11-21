@@ -53,7 +53,8 @@ const FIELDS = [
 
 const slug = (t: string) => t.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "conversation";
 
-export async function conversationHistory(userId: string, conversationId: string): Promise<HistoryEntry[]> {
+/** `urlTtl` is how long the returned audio links stay valid, in seconds. */
+export async function conversationHistory(userId: string, conversationId: string, urlTtl = 3600): Promise<HistoryEntry[]> {
   const gens = await listGenerations(userId, conversationId);
   if (!gens.length) return [];
   const versionIds = [...new Set(gens.flatMap((g) => g.lines.map((l) => l.character_version_id)))];
@@ -97,7 +98,7 @@ export async function conversationHistory(userId: string, conversationId: string
             character_id: l.character_id,
             start_ms: t?.start_ms ?? null,
             end_ms: t?.end_ms ?? null,
-            clip_url: key ? await signedUrl(key, `${name}-v${g.version}-line-${i + 1}.mp3`) : null,
+            clip_url: key ? await signedUrl(key, `${name}-v${g.version}-line-${i + 1}.mp3`, urlTtl) : null,
           };
         }),
       );
@@ -114,8 +115,8 @@ export async function conversationHistory(userId: string, conversationId: string
         created_at: g.created_at.toISOString(),
         stalled: (g.status === "queued" || g.status === "running") && (!g.lease_until || g.lease_until.getTime() < Date.now() - 5000),
         pause_ms: g.pause_ms,
-        audio_url: g.status === "done" ? await signedUrl(`generations/${g.id}.mp3`) : null,
-        download_url: g.status === "done" ? await signedUrl(`generations/${g.id}.mp3`, `${name}-v${g.version}.mp3`) : null,
+        audio_url: g.status === "done" ? await signedUrl(`generations/${g.id}.mp3`, undefined, urlTtl) : null,
+        download_url: g.status === "done" ? await signedUrl(`generations/${g.id}.mp3`, `${name}-v${g.version}.mp3`, urlTtl) : null,
         lines,
         characters: charIds.map((vid) => {
           const then = used.get(vid)!;

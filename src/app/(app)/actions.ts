@@ -94,3 +94,11 @@ export async function revokeShare(token: string) {
     .set({ revoked_at: new Date() })
     .where(and(eq(s.shares.token, token), eq(s.shares.user_id, u.id)));
 }
+
+/** Revokes one of the teacher's agent access keys. */
+export async function revokeAgent(keyId: string) {
+  const u = await user();
+  const { revokeAgentKey } = await import("@/lib/agent/keys");
+  await revokeAgentKey(u.id, keyId);
+  revalidatePath("/agents");
+}

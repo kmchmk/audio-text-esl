@@ -185,3 +185,20 @@ export const shares = pgTable(
   },
   (t) => [index("shares_generation_idx").on(t.generation_id)],
 );
+
+/** Access keys for teachers' AI agents. Only a hash is stored; the key is shown once. */
+export const agent_keys = pgTable(
+  "agent_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    user_id: uuid("user_id").notNull(),
+    email: text("email").notNull(),
+    name: text("name").notNull(),
+    key_hash: text("key_hash").notNull().unique(),
+    key_prefix: text("key_prefix").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    last_used_at: timestamp("last_used_at", { withTimezone: true }),
+    revoked_at: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [index("agent_keys_user_idx").on(t.user_id)],
+);

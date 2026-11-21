@@ -12,4 +12,4 @@ export default function proxy(request: NextRequest) {
 }
 
 // App pages only. /auth/*, /s/* (public share links) and /api/* handle auth themselves.
-export const config = { matcher: ["/", "/conversations/:path*", "/characters/:path*"] };
+export const config = { matcher: ["/", "/conversations/:path*", "/characters/:path*", "/agents"] };
